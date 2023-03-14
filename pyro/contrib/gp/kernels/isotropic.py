@@ -22,12 +22,20 @@ def _embed_distance_matrix(distance_matrix):
     # Code adapted from https://github.com/andrewcharlesjones/multi-group-GP
     N = len(distance_matrix)
     D2 = distance_matrix**2
-    C = torch.eye(N) - ((1/N) *torch.ones(size=(N, N)))
+    C = torch.eye(N) - 1/N *torch.ones(size=(N, N))
     B = -0.5*C @ D2 @ C
     L, Q = torch.linalg.eigh(B)
-    embedding = Q @ torch.diag(_torch_sqrt(L))
+    embedding = Q @ torch.diag(_torch_sqrt(L, 1e-6))
     return embedding
 
+
+def _squared_dist(X, Z):
+    
+    X2 = (X**2).sum(1, keepdim=True)
+    Z2 = (Z**2).sum(1, keepdim=True)
+    XZ = X.matmul(Z.t())
+    r2 = X2 - 2 * XZ + Z2.t()
+    return r2.clamp(min=0)
 
 
 class Isotropy(Kernel):
@@ -50,15 +58,6 @@ class Isotropy(Kernel):
 
         lengthscale = torch.tensor(1.0) if lengthscale is None else lengthscale
         self.lengthscale = PyroParam(lengthscale, constraints.positive)
-
-
-    def _squared_dist(self, X, Z):
-        
-        X2 = (X**2).sum(1, keepdim=True)
-        Z2 = (Z**2).sum(1, keepdim=True)
-        XZ = X.matmul(Z.t())
-        r2 = X2 - 2 * XZ + Z2.t()
-        return r2.clamp(min=0)
         
 
     def _square_scaled_dist(self, X, Z=None):
@@ -75,7 +74,7 @@ class Isotropy(Kernel):
         scaled_X = X / self.lengthscale
         scaled_Z = Z / self.lengthscale
 
-        return self._squared_dist(scaled_X, scaled_Z)
+        return _squared_dist(scaled_X, scaled_Z)
 
     def _scaled_dist(self, X, Z=None):
         r"""
@@ -124,7 +123,7 @@ class MultiGroupRBF(Isotropy):
         group_embeddingsX = self.embedding[groupsX]
         group_embeddingsZ = self.embedding[groupsZ]
 
-        group_r2 = self._squared_dist(group_embeddingsX, group_embeddingsZ)
+        group_r2 = _squared_dist(group_embeddingsX, group_embeddingsZ)
         r2 = self._square_scaled_dist(X, Z)
         assert r2.shape == group_r2.shape
 
