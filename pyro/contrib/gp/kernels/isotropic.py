@@ -96,7 +96,8 @@ class MultiGroupRBF(Isotropy):
         super().__init__(input_dim, variance, lengthscale, active_dims)
 
 
-        self.group_diff_param = torch.tensor(1.0) if group_diff_param is None else group_diff_param
+        group_diff_param = torch.tensor(1.0) if group_diff_param is None else group_diff_param
+        self.group_diff_param = PyroParam(group_diff_param, constraints.positive)
         self.group_distances = group_distances
         self.embedding = None
 
