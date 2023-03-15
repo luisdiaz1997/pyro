@@ -20,7 +20,7 @@ from pyro.nn.module import PyroParam, pyro_method
 
 class MultigroupGP(GPModel):
     
-    def __init__(self, X, y, kernel, groups, noise=None, mean_function=None, group_specific_noise_terms=False, jitter=1e-6):
+    def __init__(self, X, y, kernel, groups, noises=None, mean_function=None, group_specific_noise_terms=False, jitter=1e-6):
         assert isinstance(
             X, torch.Tensor
         ), "X needs to be a torch Tensor instead of a {}".format(type(X))
@@ -36,13 +36,9 @@ class MultigroupGP(GPModel):
         self.n_noise_terms = self.n_groups if self.group_specific_noise_terms else 1
 
 
-        noise = self.X.new_tensor(1.0) if noise is None else noise
-        self.noise = PyroParam(noise.detach().clone(), constraints.positive)
-
-      
-        # for _ in range(self.n_noise_terms):
-        #     self.new_noise = PyroParam(noise.detach().clone(), constraints.positive)
-        #     self.noises.append(self.new_noise)
+        noises = torch.ones(self.n_noise_terms) if noises is None else noises
+        assert len(noises)==self.n_noise_terms
+        self.noises = PyroParam(noises, constraint=constraints.positive)
 
     
     @pyro_method
@@ -51,7 +47,12 @@ class MultigroupGP(GPModel):
 
         N = self.X.size(0)
         Kff = self.kernel(self.X, self.groups)
-        Kff.view(-1)[:: N + 1] += self.jitter + self.noise
+
+        if self.group_specific_noise_terms:
+            for i, group in enumerate(torch.unique(self.groups)):
+                Kff.view(-1)[:: N + 1][self.groups==group] += self.jitter + self.noises[i]
+        else:
+            Kff.view(-1)[:: N + 1] += self.jitter + self.noises[0]
 
         Lff = torch.linalg.cholesky(Kff)
         zero_loc = self.X.new_zeros(self.X.size(0))
@@ -100,7 +101,12 @@ class MultigroupGP(GPModel):
         N = self.X.size(0)
         Kff = self.kernel(self.X, self.groups).contiguous()
 
-        Kff.view(-1)[:: N + 1] += self.jitter + self.noise
+        if self.group_specific_noise_terms:
+            for i, group in enumerate(torch.unique(self.groups)):
+                Kff.view(-1)[:: N + 1][self.groups==group] += self.jitter + self.noises[i]
+
+        else:
+            Kff.view(-1)[:: N + 1] += self.jitter + self.noises[0]
         Lff = torch.linalg.cholesky(Kff)
 
         y_residual = self.y - self.mean_function(self.X)
