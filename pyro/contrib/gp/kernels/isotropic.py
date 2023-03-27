@@ -134,7 +134,45 @@ class MultiGroupRBF(Isotropy):
 
         return self.variance * torch.exp(-0.5 * r2/ (self.group_diff_param * group_r2 + 1)) * scale
 
-    
+
+
+class IndependentRBF(Isotropy):
+    r"""
+    This Kernel creates a  kernel of independent RBFs.
+    This is to use learn separate Kernel parameters per Gaussian Process.
+    """
+
+    def __init__(self, input_dim, components, variance=None, lengthscale=None, active_dims=None):
+        self.components = components
+
+
+        variance = torch.tensor(1.0) if variance is None else variance
+        lengthscale = torch.tensor(1.0) if lengthscale is None else lengthscale
+
+        variance = variance.repeat(components)
+        lengthscale = lengthscale.repeat(components)
+        super().__init__(input_dim, variance, lengthscale, active_dims)
+
+    def forward(self, X, Z=None, diag=False):
+        if diag:
+            return self._diag(X)
+        
+        if Z is None:
+            Z = X
+        X = self._slice_input(X)
+        Z = self._slice_input(Z)
+        if X.size(1) != Z.size(1):
+            raise ValueError("Inputs must have the same number of features.")
+
+        r2 = _squared_dist(X, Z)
+
+        r2 = r2.repeat(self.components, 1, 1)
+
+        r2 = r2/(self.lengthscale[:, None, None] ** 2)
+
+        return (self.variance[:, None, None]) * torch.exp(-0.5 * r2)
+
+
 
 class RBF(Isotropy):
     r"""

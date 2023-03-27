@@ -11,7 +11,8 @@ from pyro.contrib.gp.kernels.isotropic import (
     Matern32,
     Matern52,
     RationalQuadratic,
-    MultiGroupRBF
+    MultiGroupRBF,
+    IndependentRBF
 )
 from pyro.contrib.gp.kernels.kernel import (
     Combination,
@@ -44,6 +45,7 @@ __all__ = [
     "Polynomial",
     "Product",
     "RBF",
+    "IndependentRBF",
     "MultiGroupRBF",
     "RationalQuadratic",
     "Sum",
