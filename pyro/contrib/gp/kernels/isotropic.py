@@ -166,7 +166,7 @@ class IndependentRBF(Isotropy):
 
         r2 = _squared_dist(X, Z)
 
-        r2 = r2.repeat(self.components, 1, 1)
+        r2 = (r2[None, :, :]).expand(self.components, -1, -1)
 
         r2 = r2/(self.lengthscale[:, None, None] ** 2)
 
