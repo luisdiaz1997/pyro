@@ -7,6 +7,7 @@ from pyro.contrib.gp.models.model import GPModel
 from pyro.contrib.gp.models.sgpr import SparseGPRegression
 from pyro.contrib.gp.models.vgp import VariationalGP
 from pyro.contrib.gp.models.vsgp import VariationalSparseGP
+from pyro.contrib.gp.models.vsmggp import VariationalSparseMGGGP
 from pyro.contrib.gp.models.mggp import MultigroupGP
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "VariationalGP",
     "VariationalSparseGP",
     "MultigroupGP",
+    "VariationalSparseMGGGP",
 ]

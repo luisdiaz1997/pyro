@@ -11,13 +11,6 @@ from pyro.distributions.util import eye_like
 from pyro.nn.module import PyroParam, pyro_method
 
 
-
-
-
-
-
-
-
 class MultigroupGP(GPModel):
     
     def __init__(self, X, y, kernel, groups, noises=None, mean_function=None, group_specific_noise_terms=False, jitter=1e-6):
