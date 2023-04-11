@@ -89,7 +89,7 @@ class GPModel(Parameterized):
         a covariance matrix to help stablize its Cholesky decomposition.
     """
 
-    def __init__(self, X, y, kernel, mean_function=None, jitter=1e-6):
+    def __init__(self, X, y, kernel, mean_function=None, jitter=1e-6, nonGaussian=False):
         assert isinstance(
             X, torch.Tensor
         ), "X needs to be a torch Tensor instead of a {}".format(type(X))
@@ -99,7 +99,7 @@ class GPModel(Parameterized):
             ), "y needs to be a torch Tensor instead of a {}".format(type(y))
 
         super().__init__()
-        self.set_data(X, y)
+        self.set_data(X, y, nonGaussian=nonGaussian)
         self.kernel = kernel
         self.mean_function = (
             mean_function if mean_function is not None else _zero_mean_function
@@ -141,7 +141,7 @@ class GPModel(Parameterized):
         """
         raise NotImplementedError
 
-    def set_data(self, X, y=None):
+    def set_data(self, X, y=None, nonGaussian=False):
         """
         Sets data for Gaussian Process models.
 
@@ -195,12 +195,13 @@ class GPModel(Parameterized):
             number of data points.
         """
         if y is not None and X.size(0) != y.size(-1):
-            raise ValueError(
-                "Expected the number of input data points equal to the "
-                "number of output data points, but got {} and {}.".format(
-                    X.size(0), y.size(-1)
+            if not nonGaussian:
+                raise ValueError(
+                    "Expected the number of input data points equal to the "
+                    "number of output data points, but got {} and {}.".format(
+                        X.size(0), y.size(-1)
+                    )
                 )
-            )
         self.X = X
         self.y = y
 

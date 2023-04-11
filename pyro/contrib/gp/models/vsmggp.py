@@ -11,7 +11,7 @@ from pyro.distributions.util import eye_like
 from pyro.nn.module import PyroParam, pyro_method
 
 
-class VariationalSparseMGGGP(GPModel):
+class VariationalSparseMGGP(GPModel):
     
     def __init__(self, 
                  X, 
@@ -25,7 +25,9 @@ class VariationalSparseMGGGP(GPModel):
                  latent_shape=None,
                  num_data=None,
                  whiten=False,
-                 jitter=1e-6):
+                 jitter=1e-6,
+                 nonGaussian=False,
+                 u_loc=None):
         assert isinstance(
             X, torch.Tensor
         ), "X needs to be a torch Tensor instead of a {}".format(type(X))
@@ -33,7 +35,7 @@ class VariationalSparseMGGGP(GPModel):
             assert isinstance(
                 y, torch.Tensor
             ), "y needs to be a torch Tensor instead of a {}".format(type(y))
-        super().__init__(X, y, kernel, mean_function, jitter)
+        super().__init__(X, y, kernel, mean_function, jitter, nonGaussian)
 
         self.groups = groups
         self.n_groups = len(torch.unique(self.groups))
@@ -46,7 +48,9 @@ class VariationalSparseMGGGP(GPModel):
         self.latent_shape = latent_shape if latent_shape is not None else y_batch_shape
 
         M = self.Xu.size(0)
-        u_loc = self.Xu.new_zeros(self.latent_shape + (M,))
+        if u_loc is None:
+            u_loc = self.Xu.new_zeros(self.latent_shape + (M,))
+
         self.u_loc = Parameter(u_loc)
 
         identity = eye_like(self.Xu, M)

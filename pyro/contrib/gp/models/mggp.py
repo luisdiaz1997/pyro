@@ -13,7 +13,7 @@ from pyro.nn.module import PyroParam, pyro_method
 
 class MultigroupGP(GPModel):
     
-    def __init__(self, X, y, kernel, groups, noises=None, mean_function=None, group_specific_noise_terms=False, jitter=1e-6):
+    def __init__(self, X, y, kernel, groups, noises=None, mean_function=None, group_specific_noise_terms=False, jitter=1e-6, nonGaussian=False):
         assert isinstance(
             X, torch.Tensor
         ), "X needs to be a torch Tensor instead of a {}".format(type(X))
@@ -21,7 +21,7 @@ class MultigroupGP(GPModel):
             assert isinstance(
                 y, torch.Tensor
             ), "y needs to be a torch Tensor instead of a {}".format(type(y))
-        super().__init__(X, y, kernel, mean_function, jitter)
+        super().__init__(X, y, kernel, mean_function, jitter, nonGaussian)
 
         self.groups = groups
         self.n_groups = len(torch.unique(self.groups)) 
